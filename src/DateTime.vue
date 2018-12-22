@@ -1,7 +1,7 @@
 <template>
   <div>
-    <label>{{label}} <a href='#' v-clap.prevent='setNow()'>set to now</a></label>
-    <input v-el:date type='datetime-local' v-model='value' data-input>
+    <label>{{label}} <a href='#' v-clap.prevent='setNow()'>set to today</a></label>
+    <input v-el:date type='date' v-model='value' data-input>
   </div>
 </template>
 <script>
@@ -16,11 +16,8 @@ export default {
     const self = this;
     const pickerConfig = {
       allowInput: true,
-      enableTime: true,
-      time_24hr: true,
-      enableSeconds: true,
-      dateFormat: 'Y-m-dTH:i:S',
-      utc: false,
+      enableTime: false,
+      dateFormat: 'd-m-Y',
 
       onChange() {
         self.changeFromFlatPickr = true;

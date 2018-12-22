@@ -4,27 +4,9 @@
 import appModel from './appModel.js';
 import createLogTemplate from './logTemplate.js';
 
-// This is my API client id. It's whitelisted only for the following domains
-//
-// http://localhost:8091
-// http://127.0.0.1:8091
-// https://time.anvaka.com
-// http://time.anvaka.com
-//
-// So if you want to run this on a different port, you'll need your own client id.
-const CLIENT_ID = '616901175953-k3qnrg34f7khs5a688k8l51oqn4f15o1.apps.googleusercontent.com';
 
-// Defines where all time log records are.
-//
-// By default we are using only three columns:
-//
-//     A        B       C
-// 1  Start    End     What?
-// ---------------------------------
-// 2    records go here
-//
-// So, our final range is:
-const TIME_RANGE = 'A2:C'
+const RIDES_RANGE = 'A10:K';
+// const PRESETS_RANGE = 'A2:G';
 
 const SCOPES = [
   // We need this to list all spreadsheet files
@@ -92,35 +74,38 @@ function cleanAppModel() {
 export function fetchLastRecords(spreadsheetId) {
   return gapi.client.sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: TIME_RANGE,
-  }).then(id, checkError);
+    range: RIDES_RANGE,
+  })
+    .then(response => response, checkError);
 }
 
 /**
  * Appends log entry to the given spreadsheet.
  */
-export function logTime(spreadsheetId, start, end, what) {
+export function logTime(spreadsheetId, values) {
   return gapi.client.sheets.spreadsheets.values.append({
     spreadsheetId,
     valueInputOption: 'USER_ENTERED',
-    range: TIME_RANGE,
-    values: [[start, end, what]],
-  }).then(id, checkError);
+    range: RIDES_RANGE,
+    values: [values],
+  })
+    .then(response => response, checkError);
 }
 
 /**
  * Creates a new spreadsheet file with a given name.
  */
 export function createSpreadsheet(name) {
-  return gapi.client.sheets.spreadsheets.create(createLogTemplate(name)).then(response => {
-    const {result} = response;
-    appModel.files.unshift({
-      id: result.spreadsheetId,
-      name
-    });
+  return gapi.client.sheets.spreadsheets.create(createLogTemplate(name))
+    .then(response => {
+      const {result} = response;
+      appModel.files.unshift({
+        id: result.spreadsheetId,
+        name
+      });
 
-    return result;
-  }, checkError);
+      return result;
+    }, checkError);
 }
 
 /**
@@ -175,12 +160,20 @@ export function getSheetTitle(spreadsheetId, callback) {
 
   gapi.client.sheets.spreadsheets.get({
     spreadsheetId,
-    fields: 'properties/title'
-  }).then(response => {
-    const title = get(response, 'result.properties.title');
-    sheetIdToTitle.set(spreadsheetId, title);
-    callback(title);
-  });
+    fields: 'sheets/properties'
+  })
+    .then(r => {
+      console.log(r);
+      gapi.client.sheets.spreadsheets.get({
+        spreadsheetId,
+        fields: 'properties/title'
+      })
+        .then(response => {
+          const title = get(response, 'result.properties.title');
+          sheetIdToTitle.set(spreadsheetId, title);
+          callback(title);
+        });
+    });
 }
 
 function handleAuthResult(authResult) {
@@ -190,7 +183,8 @@ function handleAuthResult(authResult) {
 }
 
 function loadAPIs() {
-  gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4').then(markGapiReady);
+  gapi.client.load('https://sheets.googleapis.com/$discovery/rest?version=v4')
+    .then(markGapiReady);
   gapi.client.load('drive', 'v3', listTimeSheetFiles);
 }
 
@@ -202,11 +196,12 @@ function listTimeSheetFiles() {
   gapi.client.drive.files.list({
     q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed = false",
     pageSize: 100,
-  }).execute(response => {
-    appModel.filesLoaded = true;
-    appModel.files = response.files;
-    makeTitleIndex(response.files);
-  }, checkError);
+  })
+    .execute(response => {
+      appModel.filesLoaded = true;
+      appModel.files = response.files;
+      makeTitleIndex(response.files);
+    }, checkError);
 }
 
 function makeTitleIndex(files) {
@@ -227,8 +222,6 @@ function get(obj, path) {
 
   return obj;
 }
-
-function id(x) { return x; }
 
 function checkError(response) {
   if (response.status === 401) {

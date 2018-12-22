@@ -16,7 +16,7 @@ export function convertDateToSheetsDateString(str) {
 /**
  * returns current time as an <input type='datetime-local'/> value.
  */
-export function getNow() {
+export function getCurrentDate() {
   return toDateInputStr(new Date());
 }
 
@@ -29,10 +29,7 @@ export function toDateInputStr(date) {
   /* eslint prefer-template: 0 */
   return date.getFullYear() +
         '-' + pad(date.getMonth() + 1) +
-        '-' + pad(date.getDate()) +
-        'T' + pad(date.getHours()) +
-        ':' + pad(date.getMinutes()) +
-        ':' + pad(date.getSeconds());
+        '-' + pad(date.getDate())
 }
 
 function pad(number) {
